@@ -172,6 +172,42 @@ class ApiGatewayWithAcordSchemaStack(Stack):
         
         swagger_resource.add_method("GET", swagger_integration)
 
+        # Enable CORS for the Swagger resource
+        apigateway.CfnMethod(self, "SwaggerOptionsMethod",
+                             resource_id=swagger_resource.resource_id,
+                             rest_api_id=api.rest_api_id,
+                             http_method="OPTIONS",
+                             authorization_type="NONE",
+                             integration=apigateway.CfnMethod.IntegrationProperty(
+                                 type="MOCK",
+                                 request_templates={
+                                     "application/json": '{"statusCode": 200}'
+                                 },
+                                 integration_responses=[
+                                     apigateway.CfnMethod.IntegrationResponseProperty(
+                                         status_code="200",
+                                         response_parameters={
+                                             "method.response.header.Access-Control-Allow-Headers": "'Content-Type'",
+                                             "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                                             "method.response.header.Access-Control-Allow-Origin": "'*'"
+                                         },
+                                         response_templates={
+                                             "application/json": ""
+                                         }
+                                     )
+                                 ]
+                             ),
+                             method_responses=[
+                                 apigateway.CfnMethod.MethodResponseProperty(
+                                     status_code="200",
+                                     response_parameters={
+                                         "method.response.header.Access-Control-Allow-Headers": True,
+                                         "method.response.header.Access-Control-Allow-Methods": True,
+                                         "method.response.header.Access-Control-Allow-Origin": True
+                                     }
+                                 )
+                             ])
+
         # Output the API Gateway URL
         CfnOutput(self, "ApiUrl", value=api.url)
 
