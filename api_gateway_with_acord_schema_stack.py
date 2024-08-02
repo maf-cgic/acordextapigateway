@@ -41,11 +41,8 @@ class ApiGatewayWithAcordSchemaStack(Stack):
         # Define the /applications resource
         applications_resource = api.root.add_resource("applications")
 
-        # Add POST method to /applications resource with Cognito Authorizer
-        applications_resource.add_method("POST",
-                                         apigateway.LambdaIntegration(my_lambda),
-                                         authorization_type=apigateway.AuthorizationType.COGNITO,
-                                         authorizer=apigateway.CognitoUserPoolsAuthorizer(self, "CognitoAuthorizer", cognito_user_pools=[user_pool]))
+        # Add POST method to /applications resource
+        applications_resource.add_method("POST", apigateway.LambdaIntegration(my_lambda))
 
         # Define the API structure using Swagger/OpenAPI with ACORD schema
         swagger_definition = {
@@ -178,44 +175,23 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                 "application/json": '{"statusCode": 200}'
             }
         )
-        
-        swagger_resource.add_method("GET", swagger_integration)
+
+        swagger_resource.add_method("GET", swagger_integration,
+                                    method_responses=[apigateway.MethodResponse(
+                                        status_code="200",
+                                        response_parameters={
+                                            "method.response.header.Access-Control-Allow-Headers": True,
+                                            "method.response.header.Access-Control-Allow-Methods": True,
+                                            "method.response.header.Access-Control-Allow-Origin": True
+                                        }
+                                    )])
 
         # Enable CORS for the Swagger resource
-        apigateway.CfnMethod(self, "SwaggerOptionsMethod",
-                             resource_id=swagger_resource.resource_id,
-                             rest_api_id=api.rest_api_id,
-                             http_method="OPTIONS",
-                             authorization_type="NONE",
-                             integration=apigateway.CfnMethod.IntegrationProperty(
-                                 type="MOCK",
-                                 request_templates={
-                                     "application/json": '{"statusCode": 200}'
-                                 },
-                                 integration_responses=[
-                                     apigateway.CfnMethod.IntegrationResponseProperty(
-                                         status_code="200",
-                                         response_parameters={
-                                             "method.response.header.Access-Control-Allow-Headers": "'Content-Type'",
-                                             "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
-                                             "method.response.header.Access-Control-Allow-Origin": "'*'"
-                                         },
-                                         response_templates={
-                                             "application/json": ""
-                                         }
-                                     )
-                                 ]
-                             ),
-                             method_responses=[
-                                 apigateway.CfnMethod.MethodResponseProperty(
-                                     status_code="200",
-                                     response_parameters={
-                                         "method.response.header.Access-Control-Allow-Headers": True,
-                                         "method.response.header.Access-Control-Allow-Methods": True,
-                                         "method.response.header.Access-Control-Allow-Origin": True
-                                     }
-                                 )
-                             ])
+        swagger_resource.add_cors_preflight(
+            allow_origins=["*"],
+            allow_methods=["GET", "OPTIONS"],
+            allow_headers=["Content-Type"]
+        )
 
         # Output the API Gateway URL
         CfnOutput(self, "ApiUrl", value=api.url)
