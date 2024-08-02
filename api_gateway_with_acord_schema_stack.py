@@ -22,21 +22,30 @@ class ApiGatewayWithAcordSchemaStack(Stack):
         user_pool_client = cognito.UserPoolClient(self, "UserPoolClient",
                                                   user_pool=user_pool)
 
-        # Create a new Lambda function
+        # Create a new Lambda function with X-Ray tracing enabled
         my_lambda = _lambda.Function(self, "MyFunction",
                                      runtime=_lambda.Runtime.PYTHON_3_8,
                                      handler="handler.handler",
-                                     code=_lambda.Code.from_asset("lambda"))
+                                     code=_lambda.Code.from_asset("lambda"),
+                                     tracing=_lambda.Tracing.ACTIVE)
 
-        # Create the API Gateway
+        # Create the API Gateway with X-Ray tracing enabled
         api = apigateway.RestApi(self, "MyApi",
-                                 deploy_options=apigateway.StageOptions(stage_name="dev"))
+                                 deploy_options=apigateway.StageOptions(
+                                     stage_name="dev",
+                                     tracing_enabled=True,
+                                     logging_level=apigateway.MethodLoggingLevel.INFO,
+                                     data_trace_enabled=True
+                                 ))
 
         # Define the /applications resource
         applications_resource = api.root.add_resource("applications")
 
-        # Add POST method to /applications resource
-        applications_resource.add_method("POST", apigateway.LambdaIntegration(my_lambda))
+        # Add POST method to /applications resource with Cognito Authorizer
+        applications_resource.add_method("POST",
+                                         apigateway.LambdaIntegration(my_lambda),
+                                         authorization_type=apigateway.AuthorizationType.COGNITO,
+                                         authorizer=apigateway.CognitoUserPoolsAuthorizer(self, "CognitoAuthorizer", cognito_user_pools=[user_pool]))
 
         # Define the API structure using Swagger/OpenAPI with ACORD schema
         swagger_definition = {
