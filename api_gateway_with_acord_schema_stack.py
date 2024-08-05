@@ -42,7 +42,48 @@ class ApiGatewayWithAcordSchemaStack(Stack):
         applications_resource = api.root.add_resource("applications")
 
         # Add POST method to /applications resource
-        applications_resource.add_method("POST", apigateway.LambdaIntegration(my_lambda))
+        applications_resource.add_method("POST", apigateway.LambdaIntegration(my_lambda), 
+                                         method_responses=[
+                                             apigateway.MethodResponse(
+                                                 status_code="201",
+                                                 response_parameters={
+                                                     "method.response.header.Access-Control-Allow-Headers": True,
+                                                     "method.response.header.Access-Control-Allow-Methods": True,
+                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                 }
+                                             ),
+                                             apigateway.MethodResponse(
+                                                 status_code="400",
+                                                 response_models={
+                                                     "application/json": apigateway.Model.EMPTY_MODEL,
+                                                     "application/xml": apigateway.Model.EMPTY_MODEL
+                                                 },
+                                                 response_parameters={
+                                                     "method.response.header.Access-Control-Allow-Headers": True,
+                                                     "method.response.header.Access-Control-Allow-Methods": True,
+                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                 }
+                                             ),
+                                             apigateway.MethodResponse(
+                                                 status_code="500",
+                                                 response_models={
+                                                     "application/json": apigateway.Model.EMPTY_MODEL,
+                                                     "application/xml": apigateway.Model.EMPTY_MODEL
+                                                 },
+                                                 response_parameters={
+                                                     "method.response.header.Access-Control-Allow-Headers": True,
+                                                     "method.response.header.Access-Control-Allow-Methods": True,
+                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                 }
+                                             )
+                                         ])
+
+        # Enable CORS for the applications resource
+        applications_resource.add_cors_preflight(
+            allow_origins=["*"],
+            allow_methods=["POST", "OPTIONS"],
+            allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"]
+        )
 
         # Define the API structure using Swagger/OpenAPI with ACORD schema
         swagger_definition = {
@@ -69,20 +110,20 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                     "InsuranceSvcRq": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "RqUID": {"type": "string"},
-                                                            "TransactionRequestDt": {"type": "string", "format": "date"},
+                                                            "RqUID": {"type": "string", "description": "Request unique identifier"},
+                                                            "TransactionRequestDt": {"type": "string", "format": "date", "description": "Date of the transaction request"},
                                                             "NewBusiness": {
                                                                 "type": "object",
                                                                 "properties": {
                                                                     "PersPkgPolicy": {
                                                                         "type": "object",
                                                                         "properties": {
-                                                                            "LOBCd": {"type": "string"},
+                                                                            "LOBCd": {"type": "string", "description": "Line of business code"},
                                                                             "ContractTerm": {
                                                                                 "type": "object",
                                                                                 "properties": {
-                                                                                    "EffectiveDt": {"type": "string", "format": "date"},
-                                                                                    "ExpirationDt": {"type": "string", "format": "date"}
+                                                                                    "EffectiveDt": {"type": "string", "format": "date", "description": "Effective date"},
+                                                                                    "ExpirationDt": {"type": "string", "format": "date", "description": "Expiration date"}
                                                                                 }
                                                                             },
                                                                             "InsuredOrPrincipal": {
@@ -97,8 +138,8 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                                                                     "PersonName": {
                                                                                                         "type": "object",
                                                                                                         "properties": {
-                                                                                                            "GivenName": {"type": "string"},
-                                                                                                            "Surname": {"type": "string"}
+                                                                                                            "GivenName": {"type": "string", "description": "Given name"},
+                                                                                                            "Surname": {"type": "string", "description": "Surname"}
                                                                                                         }
                                                                                                     }
                                                                                                 }
@@ -121,6 +162,11 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                         },
                                         "required": ["ACORD"]
                                     }
+                                },
+                                "application/xml": {
+                                    "schema": {
+                                        "type": "string"
+                                    }
                                 }
                             }
                         },
@@ -136,6 +182,49 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                 "StatusCd": {"type": "string"},
                                                 "StatusDesc": {"type": "string"}
                                             }
+                                        }
+                                    },
+                                    "application/xml": {
+                                        "schema": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "400": {
+                                "description": "Invalid input, missing required fields",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {"type": "string"},
+                                                "message": {"type": "string"}
+                                            }
+                                        }
+                                    },
+                                    "application/xml": {
+                                        "schema": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "500": {
+                                "description": "Internal server error",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {"type": "string"},
+                                                "message": {"type": "string"}
+                                            }
+                                        }
+                                    },
+                                    "application/xml": {
+                                        "schema": {
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -167,12 +256,14 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                 {
                     "statusCode": "200",
                     "responseTemplates": {
-                        "application/json": json.dumps(swagger_definition)
+                        "application/json": json.dumps(swagger_definition),
+                        "application/xml": json.dumps(swagger_definition)
                     }
                 }
             ],
             request_templates={
-                "application/json": '{"statusCode": 200}'
+                "application/json": '{"statusCode": 200}',
+                "application/xml": '{"statusCode": 200}'
             }
         )
 
