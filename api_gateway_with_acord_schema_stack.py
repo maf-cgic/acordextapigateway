@@ -47,9 +47,9 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                              apigateway.MethodResponse(
                                                  status_code="201",
                                                  response_parameters={
-                                                     "method.response.header.Access-Control-Allow-Headers": True,
-                                                     "method.response.header.Access-Control-Allow-Methods": True,
-                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                     "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                                     "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                                                     "method.response.header.Access-Control-Allow-Origin": "'*'"
                                                  }
                                              ),
                                              apigateway.MethodResponse(
@@ -59,9 +59,9 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                      "application/xml": apigateway.Model.EMPTY_MODEL
                                                  },
                                                  response_parameters={
-                                                     "method.response.header.Access-Control-Allow-Headers": True,
-                                                     "method.response.header.Access-Control-Allow-Methods": True,
-                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                     "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                                     "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                                                     "method.response.header.Access-Control-Allow-Origin": "'*'"
                                                  }
                                              ),
                                              apigateway.MethodResponse(
@@ -71,9 +71,9 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                      "application/xml": apigateway.Model.EMPTY_MODEL
                                                  },
                                                  response_parameters={
-                                                     "method.response.header.Access-Control-Allow-Headers": True,
-                                                     "method.response.header.Access-Control-Allow-Methods": True,
-                                                     "method.response.header.Access-Control-Allow-Origin": True
+                                                     "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                                     "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                                                     "method.response.header.Access-Control-Allow-Origin": "'*'"
                                                  }
                                              )
                                          ])
@@ -271,9 +271,9 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                     method_responses=[apigateway.MethodResponse(
                                         status_code="200",
                                         response_parameters={
-                                            "method.response.header.Access-Control-Allow-Headers": True,
-                                            "method.response.header.Access-Control-Allow-Methods": True,
-                                            "method.response.header.Access-Control-Allow-Origin": True
+                                            "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                                            "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                                            "method.response.header.Access-Control-Allow-Origin": "'*'"
                                         }
                                     )])
 
