@@ -43,6 +43,10 @@ class ApiGatewayWithAcordSchemaStack(Stack):
 
         # Add POST method to /applications resource
         applications_resource.add_method("POST", apigateway.LambdaIntegration(my_lambda), 
+                                         authorization_type=apigateway.AuthorizationType.COGNITO,
+                                         authorizer=apigateway.CognitoUserPoolsAuthorizer(self, "UserPoolAuthorizer",
+                                                                                         cognito_user_pools=[user_pool]),
+                                         api_key_required=True,
                                          method_responses=[
                                              apigateway.MethodResponse(
                                                  status_code="201",
@@ -50,30 +54,34 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                      "method.response.header.Access-Control-Allow-Headers": True,
                                                      "method.response.header.Access-Control-Allow-Methods": True,
                                                      "method.response.header.Access-Control-Allow-Origin": True
+                                                 },
+                                                 response_models={
+                                                     "application/json": apigateway.Model.EMPTY_MODEL,
+                                                     "application/xml": apigateway.Model.EMPTY_MODEL
                                                  }
                                              ),
                                              apigateway.MethodResponse(
                                                  status_code="400",
-                                                 response_models={
-                                                     "application/json": apigateway.Model.EMPTY_MODEL,
-                                                     "application/xml": apigateway.Model.EMPTY_MODEL
-                                                 },
                                                  response_parameters={
                                                      "method.response.header.Access-Control-Allow-Headers": True,
                                                      "method.response.header.Access-Control-Allow-Methods": True,
                                                      "method.response.header.Access-Control-Allow-Origin": True
+                                                 },
+                                                 response_models={
+                                                     "application/json": apigateway.Model.EMPTY_MODEL,
+                                                     "application/xml": apigateway.Model.EMPTY_MODEL
                                                  }
                                              ),
                                              apigateway.MethodResponse(
                                                  status_code="500",
-                                                 response_models={
-                                                     "application/json": apigateway.Model.EMPTY_MODEL,
-                                                     "application/xml": apigateway.Model.EMPTY_MODEL
-                                                 },
                                                  response_parameters={
                                                      "method.response.header.Access-Control-Allow-Headers": True,
                                                      "method.response.header.Access-Control-Allow-Methods": True,
                                                      "method.response.header.Access-Control-Allow-Origin": True
+                                                 },
+                                                 response_models={
+                                                     "application/json": apigateway.Model.EMPTY_MODEL,
+                                                     "application/xml": apigateway.Model.EMPTY_MODEL
                                                  }
                                              )
                                          ])
@@ -165,7 +173,65 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                 },
                                 "application/xml": {
                                     "schema": {
-                                        "type": "string"
+                                        "type": "object",
+                                        "properties": {
+                                            "ACORD": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "InsuranceSvcRq": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "RqUID": {"type": "string"},
+                                                            "TransactionRequestDt": {"type": "string"},
+                                                            "NewBusiness": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "PersPkgPolicy": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "LOBCd": {"type": "string"},
+                                                                            "ContractTerm": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "EffectiveDt": {"type": "string"},
+                                                                                    "ExpirationDt": {"type": "string"}
+                                                                                }
+                                                                            },
+                                                                            "InsuredOrPrincipal": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "GeneralPartyInfo": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "NameInfo": {
+                                                                                                "type": "object",
+                                                                                                "properties": {
+                                                                                                    "PersonName": {
+                                                                                                        "type": "object",
+                                                                                                        "properties": {
+                                                                                                            "GivenName": {"type": "string"},
+                                                                                                            "Surname": {"type": "string"}
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "required": ["PersPkgPolicy"]
+                                                            }
+                                                        },
+                                                        "required": ["RqUID", "TransactionRequestDt", "NewBusiness"]
+                                                    }
+                                                },
+                                                "required": ["InsuranceSvcRq"]
+                                            }
+                                        },
+                                        "required": ["ACORD"]
                                     }
                                 }
                             }
@@ -186,7 +252,12 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                     },
                                     "application/xml": {
                                         "schema": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "RqUID": {"type": "string"},
+                                                "StatusCd": {"type": "string"},
+                                                "StatusDesc": {"type": "string"}
+                                            }
                                         }
                                     }
                                 }
@@ -205,7 +276,11 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                     },
                                     "application/xml": {
                                         "schema": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {"type": "string"},
+                                                "message": {"type": "string"}
+                                            }
                                         }
                                     }
                                 }
@@ -220,11 +295,6 @@ class ApiGatewayWithAcordSchemaStack(Stack):
                                                 "error": {"type": "string"},
                                                 "message": {"type": "string"}
                                             }
-                                        }
-                                    },
-                                    "application/xml": {
-                                        "schema": {
-                                            "type": "string"
                                         }
                                     }
                                 }
@@ -286,4 +356,6 @@ class ApiGatewayWithAcordSchemaStack(Stack):
 
         # Output the API Gateway URL
         CfnOutput(self, "ApiUrl", value=api.url)
+        CfnOutput(self, "UserPoolId", value=user_pool.user_pool_id)
+        CfnOutput(self, "UserPoolClientId", value=user_pool_client.user_pool_client_id)
 
