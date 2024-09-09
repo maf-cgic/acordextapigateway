@@ -1,50 +1,83 @@
 import json
+import boto3
+from dicttoxml import dicttoxml
 import logging
-import dicttoxml  # Ensure this package is installed
 
+# Set up logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def generate_response(body, status_code=200, format="json"):
-    if format == "json":
-        return {
-            "statusCode": status_code,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(body)
-        }
-    elif format == "xml":
-        return {
-            "statusCode": status_code,
-            "headers": {"Content-Type": "application/xml"},
-            "body": dicttoxml.dicttoxml(body, custom_root='Response', attr_type=False).decode()
-        }
-
 def handler(event, context):
-    logger.info("Event: %s", json.dumps(event))
-    response_format = "json"  # Default to JSON
-    if 'application/xml' in event.get('headers', {}).get('Accept', ''):
-        response_format = "xml"
-
-    try:
-        body = json.loads(event['body'])
-        acord = body.get('ACORD')
-        
-        # Process the ACORD-compliant application data here (e.g., store in a database)
-        
-        response_body = {
-            "RqUID": acord.get('InsuranceSvcRq').get('RqUID'),
-            "StatusCd": "201",
-            "StatusDesc": "ACORD 103 submitted successfully"
-        }
-        return generate_response(response_body, status_code=201, format=response_format)
+    logger.info(f"Received ACORD 103 event: {json.dumps(event)}")
     
-    except ValueError as ve:
-        logger.error("Invalid input: %s", str(ve))
-        response_body = {"error": "Invalid input", "message": str(ve)}
-        return generate_response(response_body, status_code=400, format=response_format)
+    try:
+        # Parse the incoming event
+        body = json.loads(event['body'])
+        
+        logger.info(f"Parsed request body: {json.dumps(body)}")
+        
+        # Process the ACORD 103 request
+        # This is a placeholder for your actual business logic
+        response_data = {
+            "TXLife": {
+                "UserAuthResponse": {
+                    "TransResult": {
+                        "ResultCode": {"tc": "1", "value": "Success"},
+                        "ResultInfo": {
+                            "ResultInfoCode": {"tc": "1", "value": "Success"},
+                            "ResultInfoDesc": f"ACORD 103 request processed successfully"
+                        }
+                    }
+                },
+                "TXLifeResponse": {
+                    "TransRefGUID": body['TXLife']['TXLifeRequest']['TransRefGUID'],
+                    "TransType": body['TXLife']['TXLifeRequest']['TransType'],
+                    "TransExeDate": "2024-08-30",  # Replace with actual date
+                    "TransExeTime": "15:30:00",  # Replace with actual time
+                    "TransResult": {
+                        "ResultCode": {"tc": "1", "value": "Success"},
+                        "ResultInfo": {
+                            "ResultInfoCode": {"tc": "1", "value": "Success"},
+                            "ResultInfoDesc": f"ACORD 103 request processed successfully"
+                        }
+                    },
+                    "OLifE": {
+                        "Holding": {
+                            "Policy": {
+                                "PolNumber": body['TXLife']['TXLifeRequest']['OLifE']['Holding']['Policy']['PolNumber'],
+                                # Add more fields as per ACORD 103 specification
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        logger.info(f"Generated response data: {json.dumps(response_data)}")
+        
+        # Determine the response format based on the Accept header
+        accept_header = event['headers'].get('Accept', 'application/json')
+        
+        if 'xml' in accept_header.lower():
+            response_body = dicttoxml(response_data, custom_root='TXLife', attr_type=False)
+            content_type = 'application/xml'
+            logger.info("Returning XML response")
+        else:
+            response_body = json.dumps(response_data)
+            content_type = 'application/json'
+            logger.info("Returning JSON response")
+        
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': content_type
+            },
+            'body': response_body
+        }
     
     except Exception as e:
-        logger.error("Internal server error: %s", str(e))
-        response_body = {"error": "Internal server error", "message": str(e)}
-        return generate_response(response_body, status_code=500, format=response_format)
-
+        logger.error(f"Error processing ACORD 103 request: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Internal Server Error'})
+        }

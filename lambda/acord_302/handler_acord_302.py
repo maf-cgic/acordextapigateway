@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def handler(event, context):
-    logger.info(f"Received ACORD 1125 event: {json.dumps(event)}")
+    logger.info(f"Received ACORD 302 event: {json.dumps(event)}")
     
     try:
         # Parse the incoming event
@@ -16,7 +16,7 @@ def handler(event, context):
         
         logger.info(f"Parsed request body: {json.dumps(body)}")
         
-        # Process the ACORD 1125 request
+        # Process the ACORD 302 request
         # This is a placeholder for your actual business logic
         response_data = {
             "TXLife": {
@@ -25,7 +25,7 @@ def handler(event, context):
                         "ResultCode": {"tc": "1", "value": "Success"},
                         "ResultInfo": {
                             "ResultInfoCode": {"tc": "1", "value": "Success"},
-                            "ResultInfoDesc": f"ACORD 1125 request processed successfully"
+                            "ResultInfoDesc": f"ACORD 302 request processed successfully"
                         }
                     }
                 },
@@ -38,14 +38,14 @@ def handler(event, context):
                         "ResultCode": {"tc": "1", "value": "Success"},
                         "ResultInfo": {
                             "ResultInfoCode": {"tc": "1", "value": "Success"},
-                            "ResultInfoDesc": f"ACORD 1125 request processed successfully"
+                            "ResultInfoDesc": f"ACORD 302 request processed successfully"
                         }
                     },
                     "OLifE": {
                         "Holding": {
                             "Policy": {
                                 "PolNumber": body['TXLife']['TXLifeRequest']['OLifE']['Holding']['Policy']['PolNumber'],
-                                # Add more fields as per ACORD 1125 specification
+                                # Add more fields as per ACORD 302 specification
                             }
                         }
                     }
@@ -76,7 +76,7 @@ def handler(event, context):
         }
     
     except Exception as e:
-        logger.error(f"Error processing ACORD 1125 request: {str(e)}")
+        logger.error(f"Error processing ACORD 302 request: {str(e)}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': 'Internal Server Error'})
